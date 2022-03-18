@@ -2,22 +2,22 @@ from datetime import datetime
 from time import sleep
 import talib as ta
 import yfinance as yf
+import pandas as pd
 
 
 class AutoTrade:
-    def __init__(self, **kwargs):
+    def __init__(self, auto: bool = True, data: pd.DataFrame = None, **kwargs):
         """
         :param kwargs: symbol, client, data, auto
         """
         self.symbol = kwargs.get('symbol', 'BTC-USD')
-        self.prices = kwargs.get('data', None)
+        self.prices = data
         self.prime_signal = None
         self.rsi = None
         self.macd = None
         self.stock = None
-        self.boll_band = None
         self.client = kwargs.get('client', None)
-        self.auto = kwargs.get('auto', True)
+        self.auto = auto
 
     @staticmethod
     def time():
@@ -56,7 +56,7 @@ class AutoTrade:
 
     def calculating(self, step: str = 'first') -> None:
         """
-        Based On the calculating indicators calculating the first and the other step for
+        Based On the calculating indicators calculating the first and the other step for making decision
         :param step:
         :return: None
         """
@@ -80,9 +80,26 @@ class AutoTrade:
                 self.rsi = False
 
     def signal(self) -> str:
+        """
+        for anyone who just want the signal.
+        instead of call the start func should use this func.
+        :return: Signal for Buy and Sell : 'Sell' or 'Buy'
+        """
+        self.reset()
+        self.start()
         return self.prime_signal
 
-    def sl_tp(self):
+
+    def reset(self) -> None:
+        self.prime_signal = None
+        self.rsi = None
+        self.macd = None
+        self.stock = None
+
+    def sl_tp(self) -> None:
+        """
+         close the order if price reach the stop loss price or take profit order
+        """
         inside = True
         while inside:
             self.cal_indicators()
@@ -96,13 +113,12 @@ class AutoTrade:
                 # close order
                 inside = False
 
-        self.prime_signal = None
-        self.rsi = None
-        self.macd = None
-        self.stock = None
-        self.boll_band = None
+        self.reset()
 
     def decision(self) -> None:
+        """
+        after calculating it will decision to place buy or sell order
+        """
         t = self.stock
         inside = True
         while inside:
@@ -116,7 +132,7 @@ class AutoTrade:
                         break
                     else:
                         self.prime_signal = 'Buy'
-                        self.signal()
+                        break
 
             elif not self.stock:
                 self.calculating(step='second')
@@ -127,7 +143,7 @@ class AutoTrade:
                         break
                     else:
                         self.prime_signal = 'Sell'
-                        self.signal()
+                        break
 
             elif t != self.stock:
                 inside = False
@@ -135,11 +151,17 @@ class AutoTrade:
                 sleep(1)
 
     def start(self) -> None:
+        """
+        call this func if you leave auto True.
+        """
         while True:
             self.calculating()
 
             if self.stock is not None:
                 self.decision()
+
+            if self.prime_signal is not None:
+                break
 
             sleep(1)
 

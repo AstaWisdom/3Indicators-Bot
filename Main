@@ -37,8 +37,8 @@ class AutoTrade:
         4 indicators MACD, RSI, Stochastic, Bollinger Bands
 
         """
-        if self.prices is None:
-            self.get_prices()
+        
+        self.get_prices()
 
         self.prices['rsi'] = ta.RSI(self.prices['Close'], timeperiod=20)
         self.prices['macd'], self.prices['macd_signal'], self.prices['histogram'] = ta.MACD(self.prices['Close'],
